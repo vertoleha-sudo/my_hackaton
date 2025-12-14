@@ -5,7 +5,8 @@ from src.system.event_types import Event
 from src.system.config import (
     LOG_INFO,
     LOG_ERROR,
-    DEFAULT_LOG_LEVEL
+    DEFAULT_LOG_LEVEL,
+    SECURITY_MONITOR_QUEUE_NAME
 )
 
 
@@ -55,33 +56,65 @@ class UserProgramExecutor(BaseCustomProcess):
             self._log_message(LOG_ERROR, "нет прав на изменение орбиты")
             return
 
-        self._queues_dir.get_queue("orbit_control").put(
-            Event("user_program", "orbit_control", "change_orbit", params)
-        )
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
+                Event(
+                    source=self._event_source_name,
+                    destination="orbit_control",
+                    operation="change_orbit",
+                    parameters=params
+                )
+            )
 
     def _handle_photo(self):
         if "photo" not in self._permissions:
             self._log_message(LOG_ERROR, "нет прав на создание снимков")
             return
 
-        self._queues_dir.get_queue("camera").put(
-            Event("user_program", "camera", "request_photo", None)
-        )
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
+                Event(
+                    source=self._event_source_name,
+                    destination="camera",
+                    operation="request_photo",
+                    parameters=None
+                )
+            )
 
     def _handle_add_zone(self, params):
         if "zones" not in self._permissions:
             self._log_message(LOG_ERROR, "нет прав на редактирование зон")
             return
 
-        self._queues_dir.get_queue("restricted_zone_control").put(
-            Event("user_program", "restricted_zone_control", "add_zone", params)
-        )
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
+                Event(
+                    source=self._event_source_name,
+                    destination="restricted_zone_control",
+                    operation="add_zone",
+                    parameters=params
+                )
+            )
 
     def _handle_remove_zone(self, params):
         if "zones" not in self._permissions:
             self._log_message(LOG_ERROR, "нет прав на редактирование зон")
             return
 
-        self._queues_dir.get_queue("restricted_zone_control").put(
-            Event("user_program", "restricted_zone_control", "remove_zone", params)
-        )
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
+                Event(
+                    source=self._event_source_name,
+                    destination="restricted_zone_control",
+                    operation="remove_zone",
+                    parameters=params
+                )
+            )

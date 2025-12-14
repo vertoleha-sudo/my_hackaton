@@ -8,7 +8,8 @@ from src.system.config import (
     LOG_ERROR,
     LOG_INFO,
     DEFAULT_LOG_LEVEL,
-    ORBIT_CONTROL_QUEUE_NAME
+    ORBIT_CONTROL_QUEUE_NAME,
+    SECURITY_MONITOR_QUEUE_NAME
 )
 
 
@@ -71,9 +72,10 @@ class OrbitControl(BaseCustomProcess):
             self._log_message(LOG_ERROR, "орбита вне допустимых границ")
             return
 
-        sat_q = self._queues_dir.get_queue("satellite")
-        if sat_q:
-            sat_q.put(
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
                 Event(
                     source=self._event_source_name,
                     destination="satellite",
@@ -83,5 +85,5 @@ class OrbitControl(BaseCustomProcess):
             )
             self._log_message(
                 LOG_INFO,
-                "команда смены орбиты отправлена Satellite"
+                "команда смены орбиты отправлена через монитор безопасности"
             )

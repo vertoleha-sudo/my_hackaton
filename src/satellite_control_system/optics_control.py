@@ -8,7 +8,8 @@ from src.system.config import (
     LOG_INFO,
     DEFAULT_LOG_LEVEL,
     OPTICS_CONTROL_QUEUE_NAME,
-    ORBIT_DRAWER_QUEUE_NAME
+    ORBIT_DRAWER_QUEUE_NAME,
+    SECURITY_MONITOR_QUEUE_NAME
 )
 
 
@@ -59,9 +60,10 @@ class OpticsControl(BaseCustomProcess):
                         )
                         return
 
-                    drawer_q = self._queues_dir.get_queue(ORBIT_DRAWER_QUEUE_NAME)
-                    if drawer_q:
-                        drawer_q.put(
+                    # Отправляем через монитор безопасности
+                    security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+                    if security_q:
+                        security_q.put(
                             Event(
                                 source=self._event_source_name,
                                 destination=ORBIT_DRAWER_QUEUE_NAME,
@@ -85,9 +87,10 @@ class OpticsControl(BaseCustomProcess):
                 break
 
     def _request_photo(self):
-        cam_q = self._queues_dir.get_queue("camera")
-        if cam_q:
-            cam_q.put(
+        # Отправляем через монитор безопасности
+        security_q = self._queues_dir.get_queue(SECURITY_MONITOR_QUEUE_NAME)
+        if security_q:
+            security_q.put(
                 Event(
                     source=self._event_source_name,
                     destination="camera",
@@ -95,7 +98,7 @@ class OpticsControl(BaseCustomProcess):
                     parameters=None
                 )
             )
-            self._log_message(LOG_DEBUG, "запрос фото отправлен")
+            self._log_message(LOG_DEBUG, "запрос фото отправлен через монитор безопасности")
 
     def _is_restricted(self, lat, lon) -> bool:
         return any(zone.contains(lat, lon) for zone in self._zones)
